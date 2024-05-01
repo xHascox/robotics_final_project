@@ -32,10 +32,12 @@ def get_image(resolution=360, log_level="WARN", ):
     try:
         frame = ep_robot.camera.read_cv2_image()
         print('Frames have shape', frame.shape)
+        cv2.imwrite("testimage.png", frame)
         cv2.imshow('image', frame)
+        
         cv2.waitKey(1)
-    except:
-        print("failed")
+    except Exception as e:
+        print(f"failed {e}")
         time.sleep(0.01)
 
     ep_robot.camera.stop_video_stream()
