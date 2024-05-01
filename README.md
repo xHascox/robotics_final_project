@@ -2,5 +2,5 @@
 
 ## Usage:
 
-'ros2 launch robomaster_ros s1.launch'
+`ros2 launch robomaster_ros s1.launch`
 
