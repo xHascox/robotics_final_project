@@ -15,8 +15,22 @@ if IP:
     robomaster.config.LOCAL_IP_STR = IP
     robomaster.config.ROBOT_IP_STR = IP
 
+def get_image(robot, filename="testimage"):
+    try:
+        frame = robot.camera.read_cv2_image()
+        print('Frames have shape', frame.shape)
+        cv2.imwrite(filename+".png", frame)
+        print(f"image {filename} written")
+        #cv2.imshow('image', frame)
+        
+        cv2.waitKey(1)
+        return True, frame
+    except Exception as e:
+        print(f"failed {e}")
+        return [False]
 
-def get_image(resolution=360, log_level="WARN", ):
+def get_images(resolution=720, log_level="WARN", ):
+    # max resolution is 720p for video?
 
     logger.setLevel(log_level)
     ep_robot = robot.Robot()
@@ -29,20 +43,26 @@ def get_image(resolution=360, log_level="WARN", ):
     print('Camera resolution', f"{resolution}p")
     ep_robot.camera.start_video_stream(display=False, resolution=f"{resolution}p")
 
-    try:
-        frame = ep_robot.camera.read_cv2_image()
-        print('Frames have shape', frame.shape)
-        cv2.imwrite("testimage.png", frame)
-        cv2.imshow('image', frame)
-        
-        cv2.waitKey(1)
-    except Exception as e:
-        print(f"failed {e}")
-        time.sleep(0.01)
+    while not get_image(ep_robot, "straight")[0]:
+        time.sleep(1)
+    print("move gimbal")
+    ep_robot.gimbal.moveto(yaw=45, pitch=0, yaw_speed=90, pitch_speed=30).wait_for_completed()
+    print("moved gimbal")
+    time.sleep(1)
+
+    ep_robot.camera.stop_video_stream()
+
+    ep_robot.camera.start_video_stream(display=False, resolution=f"{resolution}p")
+
+
+    while not get_image(ep_robot, "right_gimbal")[0]:
+        time.sleep(1)
+    print("finished")
 
     ep_robot.camera.stop_video_stream()
     ep_robot.close()
 
 
 if __name__ == '__main__':
-    get_image()
+    get_images()
+    
