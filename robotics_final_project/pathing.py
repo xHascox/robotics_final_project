@@ -23,7 +23,7 @@ def get_red_px(image):
     return red_pixels
 
 def identify_target_from_top_down(image):
-    red_pixels get_red_px(image)
+    red_pixels = get_red_px(image)
 
     # All the red pixels will be in the red_pixels image 
     # Non-red pixels will be black.
@@ -58,20 +58,21 @@ def identify_target_from_top_down(image):
 
 
 def get_path(target_point, image):
-    red_pixels get_red_px(image)
+    red_pixels = get_red_px(image)
     red_pixels[red_pixels <= lower_red[2]] = 1
     matrix=red_pixels[:,:,2]
 
     # Create a mask to filter only blue pixels
-    mask = cv2.inRange(image_with_blue, lower_blue, upper_blue)
+    mask = cv2.inRange(image, lower_blue, upper_blue)
     # Bitwise-AND mask and with your image 
-    blue_pixels = cv2.bitwise_and(image_with_blue, image_with_blue, mask=mask)
+    blue_pixels = cv2.bitwise_and(image, image, mask=mask)
     blue_pixels_1_d = blue_pixels[:,:,0]
 
     matrix[blue_pixels_1_d > 0] = 0 # make blue pixels = obstacle
     
     grid = Grid(matrix=matrix)
-    start = grid.node(red_pixels.shape[1]//2-1,red_pixels.shape[0]-1) # BOTTOM MIDDLE
+    # start = grid.node(red_pixels.shape[1]//2-1,red_pixels.shape[0]-1) # BOTTOM MIDDLE
+    start = grid.node(red_pixels.shape[1]//2,red_pixels.shape[0]//2) # CENTER MIDDLE
     end = grid.node(*target_point)
 
     finder = AStarFinder(diagonal_movement=DiagonalMovement.never)

@@ -17,6 +17,8 @@ setup(
         [package_name+ "/patch_ftp.py"]),
         ('lib/' + package_name,
         [package_name+ "/pathing.py"]),
+        ('lib/' + package_name,
+        [package_name+ "/move.py"]),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
