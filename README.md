@@ -4,9 +4,11 @@
 
 Start 3 Terminals:
 
-### Coppelia:
+### CoppeliaSim:
 
 `~/apps/CoppeliaSim_Edu_V4_4_0_rev0_Ubuntu22_04/coppeliaSim.sh`
+
+In Coppelia, load the scene "Robomaster_Red_Blue.ttt" and start the simulation.
 
 ### ROS:
 
