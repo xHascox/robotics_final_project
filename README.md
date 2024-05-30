@@ -11,12 +11,15 @@ Start 3 Terminals:
 ### ROS:
 
 `cd ~/dev_ws/src/robomaster_ros`
+
 `ros2 launch robomaster_ros s1.launch`
 
 ### Controller:
 
 `source ~/dev_ws/install/setup.bash`
+
 `ros2 launch robotics_final_project final.launch.xml`
+
 
 
 
