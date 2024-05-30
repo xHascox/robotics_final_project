@@ -1,5 +1,8 @@
+import timeit
+
 import cv2
 import numpy as np
+from icp import ICP_leas_squares
 
 
 def show_img(img):
@@ -12,132 +15,119 @@ def show_img(img):
             break
 
 
-# img = cv2.imread("./right_gimbal.png")
-img = cv2.imread("./straight.png")
-print(img.shape)
-
-img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-th3 = cv2.adaptiveThreshold(
-    img_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
-)
-inv = 255 - th3
-
-# # kernel = np.ones((5, 5))
-# kernel = np.matrix(
-#     [
-#         [0, 0, 1, 0, 0],
-#         [0, 1, 1, 1, 0],
-#         [1, 1, 1, 1, 1],
-#         [0, 1, 1, 1, 0],
-#         [0, 0, 1, 0, 0],
-#     ],
-#     dtype=np.uint8,
-# )
-
-# kernel_close = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
-# kernel_open = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-# inv = cv2.morphologyEx(inv, cv2.MORPH_CLOSE, kernel_close)
-# inv = cv2.morphologyEx(inv, cv2.MORPH_OPEN, kernel_open)
-
-# NOTE: RIP lines
-# lines = cv2.HoughLines(
-#     inv,
-#     rho=1,
-#     theta=np.pi / 180,
-#     threshold=200,
-# )
-
-# # print(lines)
-# print(len(lines))
-#
-# for rho, theta in lines.squeeze():
-#     a = np.cos(theta)
-#     b = np.sin(theta)
-#     x0 = a * rho
-#     y0 = b * rho
-#
-#     pt1 = (int(x0 + 1000 * (-b)), int(y0 + 1000 * (a)))
-#     pt2 = (int(x0 - 2000 * (-b)), int(y0 - 2000 * (a)))
-#     cv2.line(img, pt1, pt2, (255, 0, 0), 1, cv2.LINE_AA)
-
-# for x0, y0, x1, y1 in lines.squeeze():
-#     cv2.line(img, (x0, y0), (x1, y1), (255, 0, 0), 2, cv2.LINE_AA)
-
-
-def extract_keypoints(img):
-    # create mask to hide the nozzle
-    # FIXME: the mask probs too big
-    height, width, _ = img.shape
-    mask = np.ones((height, width), dtype=np.uint8)
+def rotate_img(img, angle):
+    height, width = img.shape[:2]
     mid = width // 2
-    mask[-200:, mid - 200 : mid + 200] = 0
 
-    # TODO: better feature prep
-    # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # img = cv2.adaptiveThreshold(
-    #     img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
-    # )
+    M = cv2.getRotationMatrix2D((mid, height), angle=angle, scale=1)
 
-    sift = cv2.SIFT_create()
-    keypoints, features = sift.detectAndCompute(img, mask=mask)
-    return keypoints, features
+    # translation
+    # t_x
+    M[0, 2] += -30
+    # t_y
+    M[1, 2] += 60
+    # print(M)
+
+    return cv2.warpAffine(img, M, (width, height))
 
 
 def main():
     # Rectification
-    # TODO: add more points for better accuracy
+    # More points result in greater distortion -> bad :(
     # coordinates in image
-    p = np.matrix([[506, 522], [770, 519], [368, 650], [904, 644]])
+    p = np.matrix(
+        [
+            [506, 522],
+            [770, 519],
+            [368, 650],
+            [904, 644],
+            # [374, 482],
+            # [572, 459],
+            # [241, 524],
+            # [702, 459],
+            # [833, 457],
+            # [899, 477],
+        ]
+    )
     # coordinates in world
-    q = np.matrix([[500, 500], [600, 500], [500, 600], [600, 600]])
+    q = np.matrix(
+        [
+            [500, 500],
+            [600, 500],
+            [500, 600],
+            [600, 600],
+            # [400, 400],
+            # [500, 300],
+            # [400, 500],
+            # [600, 300],
+            # [700, 300],
+            # [700, 400],
+        ]
+    )
 
     H, _ = cv2.findHomography(p, q)
 
-    # out = cv2.warpPerspective(img, H, (img.shape[1], img.shape[0]))
     front = cv2.imread("./straight.png")
     right = cv2.imread("./right_gimbal.png")
 
     height, width, _ = front.shape
 
+    start = timeit.default_timer()
+    # 0 is "unknown"
+    # cut out the barrel
+    mid_w = width // 2
+    front[-100:, mid_w - 100 : mid_w + 100] = 0
+    right[-100:, mid_w - 100 : mid_w + 100] = 0
+
     front = cv2.warpPerspective(front, H, (width, height))
     right = cv2.warpPerspective(right, H, (width, height))
 
-    front_key, front_feat = extract_keypoints(front)
-    right_key, right_feat = extract_keypoints(right)
+    front_img = front.copy()
+    right_img = right.copy()
 
-    bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=True)
-    best_matches = bf.match(front_feat, right_feat)
+    # mask extra area
+    # front[:300, :] = 0
+    # right[:300, :] = 0
+    # front[:, : mid_w - 200] = 0
+    # right[:, mid_w:] = 0
 
-    match = cv2.drawMatches(
-        front,
-        front_key,
-        right,
-        right_key,
-        best_matches,
-        None,
-        flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
+    # NOTE: use gray-scale (3D) to find the transformation, apply to full color images
+    front = cv2.cvtColor(front, cv2.COLOR_BGR2GRAY)
+    # _, front = cv2.threshold(front, 190, 255, cv2.THRESH_BINARY)
+    right = cv2.cvtColor(right, cv2.COLOR_BGR2GRAY)
+    # _, right = cv2.threshold(right, 190, 255, cv2.THRESH_BINARY)
+
+    # TODO: use angle from odometry
+    angle = -45
+
+    # create a sample to match
+    ri, ci = np.indices((height, width))
+    ri = ri.ravel()
+    ci = ci.ravel()
+    # transform matrices to a list of points [x, y, intensity] and filter out 0 values
+    Q = np.stack((ri, ci, front.ravel()), axis=-1)[front.ravel() != 0]
+    P = np.stack((ri, ci, right.ravel()), axis=-1)[right.ravel() != 0]
+
+    rng = np.random.default_rng(42)
+
+    n = 10000
+    Qsample = rng.choice(len(Q), n, replace=False)
+    Psample = rng.choice(len(P), n, replace=False)
+
+    M = ICP_leas_squares(
+        P[Psample], Q[Qsample], (mid_w, height), angle * np.pi / 180, (100, 60)
     )
+    duration = timeit.default_timer() - start
+    print(f"Took: {duration:.4f}s")
 
-    # extract coordinates
-    front_key = np.float32([kp.pt for kp in front_key])
-    right_key = np.float32([kp.pt for kp in right_key])
+    print(M)
+    img = cv2.warpAffine(right_img, M, (width, height))
+    # right = cv2.warpAffine(right, M, (width, height))
+    # show_img(fron)
+    # right = rotate_img(right, angle)
 
-    mpoints_front = np.float32([front_key[m.queryIdx] for m in best_matches])
-    mpoints_right = np.float32([right_key[m.trainIdx] for m in best_matches])
-
-    H_stitch, _ = cv2.findHomography(mpoints_right, mpoints_front, cv2.RANSAC)
-    # H_stitch[2] = [0, 0, 1]
-    print(H_stitch)
-
-    out = cv2.warpPerspective(right, H_stitch, (width * 2, height * 2))
-
-    # show_img(inv)
-    # show_img(out)
-    # show_img(img_gray)
-    show_img(front)
-
-    cv2.imwrite("img/font_top.png", front)
+    cv2.imwrite("img/font_top.png", front_img + img)
+    # cv2.imwrite("img/font_top.png", front + right)
 
 
 if __name__ == "__main__":
