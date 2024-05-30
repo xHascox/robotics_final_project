@@ -16,6 +16,10 @@ Start 3 Terminals:
 
 ### Controller:
 
+`cd /home/robotics23/dev_ws`
+
+`colcon build`
+
 `source ~/dev_ws/install/setup.bash`
 
 `ros2 launch robotics_final_project final.launch.xml`
