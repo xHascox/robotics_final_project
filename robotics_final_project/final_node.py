@@ -49,6 +49,7 @@ def main():
     # drive TODO
     # for step in path:
     # check in which direction, use odometry to move 1 px ?!
+    # optionally, only do the first step and then take a picture again
     print("finished")
 
 main()
