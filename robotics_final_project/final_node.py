@@ -1,4 +1,5 @@
 import camera
+import pathing
 
 import time
 import patch_ftp
@@ -18,6 +19,8 @@ def main():
     ep_robot = robot.Robot()
     ep_robot.initialize(conn_type="sta")
     time.sleep(1)
+    ep_robot.gimbal.moveto(yaw=0, pitch=0, yaw_speed=90, pitch_speed=30).wait_for_completed()
+
 
     # get front view
     success, frame = camera.get_image(ep_robot)
@@ -40,9 +43,12 @@ def main():
     # create map
 
     # calculate path
+    target_point, img = pathing.identify_target_from_top_down(frame)
+    path = get_path(target_point, image)
 
     # drive
-
+    # for step in path:
+    # check in which direction, use odometry to move 1 px ?!
     print("finished")
 
 main()

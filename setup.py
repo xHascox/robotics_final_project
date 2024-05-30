@@ -15,6 +15,8 @@ setup(
         [package_name+ "/camera.py"]),
         ('lib/' + package_name,
         [package_name+ "/patch_ftp.py"]),
+        ('lib/' + package_name,
+        [package_name+ "/pathing.py"]),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
