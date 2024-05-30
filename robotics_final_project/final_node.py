@@ -40,13 +40,13 @@ def main():
     
 
 
-    # create map
+    # create map TODO
 
     # calculate path
     target_point, img = pathing.identify_target_from_top_down(frame)
     path = get_path(target_point, image)
 
-    # drive
+    # drive TODO
     # for step in path:
     # check in which direction, use odometry to move 1 px ?!
     print("finished")
