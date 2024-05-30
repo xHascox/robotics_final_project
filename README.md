@@ -28,4 +28,6 @@ In Coppelia, load the scene "Robomaster_Red_Blue.ttt" and start the simulation.
 
 
 
+## Dependencies:
 
+`pip install scikit-learn pathfinding`
