@@ -25,6 +25,8 @@ def get_directions_from_path(path):
     return directions
 
 def count_consecutive_steps(directions):
+    if len(directions)==0:
+        return 0
     first_step = directions[0]
     count = 0
 
@@ -47,22 +49,27 @@ def move_along_path(ep_robot, path):
 
     directions = get_directions_from_path(path)
     n_steps = count_consecutive_steps(directions)
+    if n_steps == 0:
+        return []
+
+    distance_factor = 0.018
 
     # move n_steps * 0.005 meters in direction directions[0]
+    print("moving", directions[0], n_steps)
     if directions[0] == "x":
-        ep_robot.chassis.move(x = 0.005 * n_steps, y=0, z=0, xy_speed=1.0, z_speed=90).wait_for_completed()
+        ep_robot.chassis.move(x = distance_factor * n_steps, y=0, z=0, xy_speed=1.0, z_speed=90).wait_for_completed()
         ep_robot.chassis.stop()
         print(f"moved {n_steps} in {directions[0]}")
     elif directions[0] == "-x":
-        ep_robot.chassis.move(x = -0.005 * n_steps, y=0, z=0, xy_speed=1.0, z_speed=90).wait_for_completed()
+        ep_robot.chassis.move(x = -distance_factor * n_steps, y=0, z=0, xy_speed=1.0, z_speed=90).wait_for_completed()
         ep_robot.chassis.stop()
         print(f"moved {n_steps} in {directions[0]}")
     elif directions[0] == "y":
-        ep_robot.chassis.move(x = 0, y= 0.005 * n_steps, z=0, xy_speed=1.0, z_speed=90).wait_for_completed()
+        ep_robot.chassis.move(x = 0, y= distance_factor * n_steps, z=0, xy_speed=1.0, z_speed=90).wait_for_completed()
         ep_robot.chassis.stop()
         print(f"moved {n_steps} in {directions[0]}")
     elif directions[0] == "-y":
-        ep_robot.chassis.move(x = 0, y= -0.005 * n_steps, z=0, xy_speed=1.0, z_speed=90).wait_for_completed()
+        ep_robot.chassis.move(x = 0, y= -distance_factor * n_steps, z=0, xy_speed=1.0, z_speed=90).wait_for_completed()
         ep_robot.chassis.stop()
         print(f"moved {n_steps} in {directions[0]}")
 

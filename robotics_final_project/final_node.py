@@ -28,9 +28,11 @@ def main():
 
     # get front view
     success, frame = camera.get_image(ep_robot)
+    print("s1", success)
     while not success:
         time.sleep(1)
         success, frame = camera.get_image(ep_robot)
+        print("retry1")
     #cv2.imshow(frame)
     
 
@@ -38,10 +40,12 @@ def main():
     ep_robot.gimbal.moveto(yaw=45, pitch=0, yaw_speed=90, pitch_speed=30).wait_for_completed()
     print("moved gimbal")
     success2, frame2 = camera.get_image(ep_robot)
+    print("s2", success2)
     while not success:
         time.sleep(1)
         success2, frame2 = camera.get_image(ep_robot)
-    print("ok4")
+        print("retry2")
+    print("ok4", success2)
 
 
     # create map TODO
@@ -59,7 +63,7 @@ def main():
     print("start to move")
     remaining_path = path
     while len(remaining_path)>0:
-        remaining_path = move.move_along_path(ep_robot, path) # moves into one direction and returns remaining path
+        remaining_path = move.move_along_path(ep_robot, remaining_path) # moves into one direction and returns remaining path
     print("finished moving")
 
 main()
